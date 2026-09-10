@@ -1,0 +1,12 @@
+# User uploads and chunks
+uploads/films/
+uploads/.chunks/
+
+# Logs and session files
+data/activity*.log
+data/sessions.json
+
+# Backups and temporary files
+*.bak
+.DS_Store
+Thumbs.db
