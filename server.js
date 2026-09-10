@@ -415,7 +415,7 @@ app.get('/api/me', (req, res) => {
     }
     res.json({ user: { id: user.id, username: user.username, isAdmin: Boolean(user.isAdmin) } });
   } catch (err) {
-    res.status(500).json({ error: 'erreur_serveur' });
+    res.status(500).json({ error: 'srvr_error' });
   }
 });
 
@@ -427,17 +427,17 @@ app.post('/api/register', (req, res) => {
 
     if (username.length < 3) {
       logEvent('WARN', `Tentative inscription rejetée (pseudo trop court : "${username}")`, req);
-      return res.status(400).json({ error: 'pseudo_trop_court' });
+      return res.status(400).json({ error: 'usrnm_t_shrt' });
     }
     if (password.length < 4) {
       logEvent('WARN', `Tentative inscription rejetée (mdp trop court pour "${username}")`, req);
-      return res.status(400).json({ error: 'mot_de_passe_trop_court' });
+      return res.status(400).json({ error: 'psswd_t_shrt' });
     }
 
     const users = getUsers();
     if (users.some((user) => user && user.username && user.username.toLowerCase() === username.toLowerCase())) {
       logEvent('WARN', `Tentative inscription rejetée (compte déjà existant : "${username}")`, req);
-      return res.status(409).json({ error: 'compte_existe' });
+      return res.status(409).json({ error: 'accnt_alrdy_exst' });
     }
 
     const newUser = {
@@ -469,7 +469,7 @@ app.post('/api/register', (req, res) => {
   } catch (err) {
     logEvent('ERROR', `Erreur lors de l'inscription : ${err.message}`, req);
     console.error('Register error:', err);
-    return res.status(500).json({ error: 'erreur_serveur', details: err.message });
+    return res.status(500).json({ error: 'srvr_error', details: err.message });
   }
 });
 
@@ -485,7 +485,7 @@ app.post('/api/login', (req, res) => {
 
     if (!user || user.passwordHash !== hashPassword(password)) {
       logEvent('WARN', `Échec de connexion : identifiants incorrects pour "${username}"`, req);
-      return res.status(401).json({ error: 'identifiants_incorrects' });
+      return res.status(401).json({ error: 'uncrrct_lgn' });
     }
 
     const token = randomToken();
@@ -506,7 +506,7 @@ app.post('/api/login', (req, res) => {
   } catch (err) {
     logEvent('ERROR', `Erreur lors de la connexion : ${err.message}`, req);
     console.error('Login error:', err);
-    return res.status(500).json({ error: 'erreur_serveur', details: err.message });
+    return res.status(500).json({ error: 'srvr_error', details: err.message });
   }
 });
 
@@ -541,7 +541,7 @@ app.post('/api/tags', (req, res) => {
     const user = getUserFromCookie(req);
     if (!user || !user.isAdmin) {
       logEvent('WARN', `Refus ajout tag (admin requis)`, req);
-      return res.status(403).json({ error: 'acces_refuse_admin_requis' });
+      return res.status(403).json({ error: 'nd_dmn_prvlgs' });
     }
 
     const body = req.body || {};
@@ -561,7 +561,7 @@ app.post('/api/tags', (req, res) => {
     res.status(201).json({ ok: true, tags: getTags() });
   } catch (err) {
     logEvent('ERROR', `Erreur création tag : ${err.message}`, req);
-    res.status(500).json({ error: 'erreur_serveur' });
+    res.status(500).json({ error: 'srvr_error' });
   }
 });
 
@@ -570,7 +570,7 @@ app.delete('/api/tags/:name', (req, res) => {
     const user = getUserFromCookie(req);
     if (!user || !user.isAdmin) {
       logEvent('WARN', `Refus suppression tag (admin requis)`, req);
-      return res.status(403).json({ error: 'acces_refuse_admin_requis' });
+      return res.status(403).json({ error: 'nd_dmn_prvlgs' });
     }
 
     const targetName = decodeURIComponent(req.params.name).trim().toLowerCase();
@@ -582,7 +582,7 @@ app.delete('/api/tags/:name', (req, res) => {
     res.json({ ok: true, tags: getTags() });
   } catch (err) {
     logEvent('ERROR', `Erreur suppression tag : ${err.message}`, req);
-    res.status(500).json({ error: 'erreur_serveur' });
+    res.status(500).json({ error: 'srvr_error' });
   }
 });
 
@@ -616,7 +616,7 @@ app.get('/api/videos', (_req, res) => {
     res.json({ videos });
   } catch (err) {
     logEvent('ERROR', `Erreur listing vidéos : ${err.message}`, _req);
-    res.status(500).json({ error: 'erreur_serveur' });
+    res.status(500).json({ error: 'srvr_error' });
   }
 });
 
@@ -686,7 +686,7 @@ app.post('/api/videos', upload.single('file'), (req, res) => {
   } catch (err) {
     logEvent('ERROR', `Erreur upload direct : ${err.message}`, req);
     console.error('Upload video error:', err);
-    res.status(500).json({ error: 'erreur_serveur', details: err.message });
+    res.status(500).json({ error: 'srvr_error', details: err.message });
   }
 });
 
@@ -702,8 +702,8 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
     }
 
     if (!req.file) {
-      logEvent('WARN', `Morceau manquant dans la requête`, req);
-      return res.status(400).json({ error: 'morceau_absent' });
+      logEvent('WARN', `Paquet manquant dans la requête`, req);
+      return res.status(400).json({ error: 'mssng_pkg' });
     }
 
     const uploadId = String(req.body.uploadId || '').replace(/[^a-zA-Z0-9_-]/g, '');
@@ -823,7 +823,7 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
   } catch (err) {
     logEvent('ERROR', `Erreur assemblage chunked upload : ${err.message}`, req);
     console.error('Chunk upload error:', err);
-    return res.status(500).json({ error: 'erreur_serveur', details: err.message });
+    return res.status(500).json({ error: 'srvr_error', details: err.message });
   }
 });
 
@@ -855,7 +855,7 @@ app.post('/api/videos/:id/tags', (req, res) => {
     res.json({ ok: true, video });
   } catch (err) {
     logEvent('ERROR', `Erreur modification tags : ${err.message}`, req);
-    res.status(500).json({ error: 'erreur_serveur' });
+    res.status(500).json({ error: 'srvr_error' });
   }
 });
 
@@ -887,7 +887,7 @@ app.delete('/api/videos/:id', (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     logEvent('ERROR', `Erreur suppression vidéo : ${err.message}`, req);
-    res.status(500).json({ error: 'erreur_serveur' });
+    res.status(500).json({ error: 'srvr_error' });
   }
 });
 
@@ -900,7 +900,7 @@ app.use((error, req, res, _next) => {
   if (error && error.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ error: 'fichier_trop_volumineux' });
   }
-  return res.status(500).json({ error: 'erreur_serveur', details: error && error.message });
+  return res.status(500).json({ error: 'srvr_error', details: error && error.message });
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => {

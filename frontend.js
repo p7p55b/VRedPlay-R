@@ -606,7 +606,7 @@ async function handleLogin(event) {
     closeAuthModal();
   } catch (error) {
     let msg = 'Identifiants incorrects.';
-    if (error.message && error.message !== 'identifiants_incorrects') {
+    if (error.message && error.message !== 'uncrrct_lgn') {
       msg = `Erreur : ${error.message}`;
     }
     showMessage('loginMessage', msg, 'error');
@@ -657,11 +657,11 @@ async function handleRegister(event) {
     closeAuthModal();
   } catch (error) {
     let msg = 'Erreur lors de la création du compte.';
-    if (error.message === 'compte_existe') {
+    if (error.message === 'accnt_alrdy_exst') {
       msg = `Ce nom d'utilisateur (${username}) existe déjà. Choisissez un autre nom ou connectez-vous.`;
-    } else if (error.message === 'pseudo_trop_court') {
+    } else if (error.message === 'usrnm_t_shrt) {
       msg = 'Le nom d’utilisateur doit comporter au moins 3 caractères.';
-    } else if (error.message === 'mot_de_passe_trop_court') {
+    } else if (error.message === 'psswd_t_shrt') {
       msg = 'Le mot de passe doit comporter au moins 4 caractères.';
     } else if (error.message) {
       msg = `Erreur : ${error.message}`;
@@ -840,7 +840,7 @@ if (uploadForm) {
     const isVideo = file && (file.type.startsWith('video/') || videoExtensions.includes(fileExt));
 
     if (!file || !isVideo) {
-      showMessage('uploadMessage', 'Choisis un fichier vidéo valide.', 'error');
+      showMessage('uploadMessage', 'Choisis une vidéo valide.', 'error');
       return;
     }
 
@@ -869,7 +869,7 @@ if (uploadForm) {
         chunkData.append('language', language);
         chunkData.append('chunk', chunkBlob, file.name);
 
-        showMessage('uploadMessage', `Envoi du film : morceau ${i + 1}/${totalChunks}...`, '');
+        showMessage('uploadMessage', `Envoi du film : paquet ${i + 1}/${totalChunks}...`, '');
 
         const res = await fetch(`${apiBase}/videos/chunk`, {
           method: 'POST',
@@ -879,12 +879,12 @@ if (uploadForm) {
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `Erreur sur le morceau ${i + 1}`);
+          throw new Error(errData.error || `Erreur sur le paquet ${i + 1}`);
         }
       }
 
       isUploading = false;
-      showMessage('uploadMessage', `Vidéo ajoutée avec succès : ${title}`, 'success');
+      showMessage('uploadMessage', `Vidéo publié avec succès : ${title}`, 'success');
       uploadForm.reset();
       appState.selectedUploadTags = new Set(['Films']);
       renderUploadTagsPicker();
@@ -904,7 +904,7 @@ if (logoutBtn) {
     try {
       await apiRequest('/logout', { method: 'POST' });
     } catch (error) {
-      // nothing
+      // dnothing
     }
     appState.user = null;
     appState.activeTag = 'all';
