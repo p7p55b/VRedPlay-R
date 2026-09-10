@@ -381,12 +381,12 @@
     <div class="container">
         <div class="upload-card">
             <div class="upload-header">
-                <h2>🎬 Ajouter un nouveau film</h2>
+                <h2>Ajouter un nouveau film</h2>
             </div>
 
             <!-- Login warning if not connected -->
             <div id="authRequiredNotice" class="not-logged-in-box hidden">
-                <h3>⚠️ Connexion requise</h3>
+                <h3>Connexion requise</h3>
                 <p>Vous devez être connecté à votre compte pour ajouter une vidéo dans la médiathèque.</p>
                 <div style="margin-top: 20px;">
                     <a href="/" class="btn">Se connecter sur le catalogue</a>
@@ -434,7 +434,7 @@
                     <label>Fichier vidéo</label>
                     <div id="fileDropzone" class="file-dropzone">
                         <input id="videoFile" type="file" accept="video/*" required>
-                        <div class="file-dropzone-icon">📁</div>
+                        <div class="file-dropzone-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></div>
                         <div class="file-dropzone-text">Cliquez ou glissez-déposez le fichier vidéo ici</div>
                         <div class="file-dropzone-sub">Formats acceptés : MP4, MKV, AVI, WEBM, MOV</div>
                     </div>
@@ -452,7 +452,7 @@
                     </div>
                 </div>
 
-                <button id="submitUploadBtn" type="submit" class="btn btn-block">🚀 Publier le film</button>
+                <button id="submitUploadBtn" type="submit" class="btn btn-block">Publier le film</button>
             </form>
 
             <div id="uploadMessage" class="status-message"></div>
@@ -479,7 +479,7 @@
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a');
             if (link && isUploading) {
-                if (!confirm('⚠️ Un upload de film est en cours d’envoi.\nSi vous quittez cette page maintenant, le transfert sera interrompu.\n\nVoulez-vous vraiment quitter ?')) {
+                if (!confirm('Un upload de film est en cours d’envoi.\nSi vous quittez cette page maintenant, le transfert sera interrompu.\n\nVoulez-vous vraiment quitter ?')) {
                     e.preventDefault();
                     e.stopPropagation();
                 }
@@ -576,7 +576,7 @@
             const file = videoFile.files[0];
             if (file) {
                 const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-                fileSelectedInfo.textContent = `✓ Fichier sélectionné : ${file.name} (${sizeMb} Mo)`;
+                fileSelectedInfo.textContent = `Fichier sélectionné : ${file.name} (${sizeMb} Mo)`;
                 fileSelectedInfo.style.display = 'block';
 
                 // Auto-fill title if empty
@@ -718,8 +718,8 @@
 
                     isUploading = false;
                     submitUploadBtn.disabled = false;
-                    submitUploadBtn.textContent = '🚀 Publier le film';
-                    showMessage(`🎉 Film « ${title} » ajouté avec succès ! Redirection vers le catalogue...`, 'success');
+                    submitUploadBtn.textContent = 'Publier le film';
+                    showMessage(`Film « ${title} » ajouté avec succès ! Redirection vers le catalogue...`, 'success');
                     dedicatedUploadForm.reset();
                     fileSelectedInfo.style.display = 'none';
                     selectedTags = new Set(['Films']);
@@ -730,7 +730,7 @@
                 } catch (error) {
                     isUploading = false;
                     submitUploadBtn.disabled = false;
-                    submitUploadBtn.textContent = '🚀 Publier le film';
+                    submitUploadBtn.textContent = 'Publier le film';
                     showMessage(error.message || 'Erreur lors de l’upload du film.', 'error');
                     progressBox.style.display = 'none';
                 }

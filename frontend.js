@@ -31,7 +31,7 @@ let isUploading = false;
 window.addEventListener('beforeunload', (e) => {
   if (isUploading) {
     e.preventDefault();
-    e.returnValue = 'Un upload de film est en cours. Si vous fermez cet onglet, le transfert sera annulé.';
+    e.returnValue = 'Un envoie est en cours. Si vous fermez cet onglet, le transfert sera annulé.';
     return e.returnValue;
   }
 });
@@ -40,7 +40,7 @@ window.addEventListener('beforeunload', (e) => {
 document.addEventListener('click', (e) => {
   const link = e.target.closest('a');
   if (link && isUploading) {
-    if (!confirm('⚠️ Un upload de film est en cours d’envoi.\nSi vous quittez cette page maintenant, le transfert sera interrompu.\n\nVoulez-vous vraiment quitter ?')) {
+    if (!confirm('⚠️ Un envoie est en cours d’envoi.\nSi vous quittez cette page maintenant, le transfert sera interrompu.\n\nVoulez-vous vraiment quitter ?')) {
       e.preventDefault();
       e.stopPropagation();
     }
