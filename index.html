@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRedPlay'Air </title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1c1c1c;
+            --panel-2: #242424;
+            --line: #383838;
+            --line-strong: #505050;
+            --text: #ededed;
+            --muted: #9e9e9e;
+            --accent: #cc2222;
+            --accent-hover: #b01b1b;
+            --green: #388e3c;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            border-radius: 0 !important;
+            transition: none !important;
+            animation: none !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 18px;
+            background: #1a1a1a;
+            border-bottom: 2px solid var(--line-strong);
+        }
+
+        .topbar-brand h1 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auth-status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auth-status-text {
+            color: var(--muted);
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .badge-admin {
+            display: inline-block;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border: 1px solid #ff4444;
+            letter-spacing: 0.05em;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 290px 1fr;
+            min-height: calc(100vh - 54px);
+        }
+
+        .sidebar {
+            background: #161616;
+            border-right: 2px solid var(--line-strong);
+            padding: 14px 12px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line-strong);
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+
+        .panel h2, .panel h3 {
+            margin: 0 0 10px;
+            font-size: 0.92rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 5px;
+        }
+
+        .field {
+            margin-bottom: 10px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .field input,
+        .field select,
+        .search-box {
+            width: 100%;
+            background: #0d0d0d;
+            color: var(--text);
+            border: 1px solid var(--line-strong);
+            padding: 7px 9px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .search-box:focus {
+            outline: 1px solid #ffffff;
+            border-color: #ffffff;
+            background: #000000;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: #ffffff;
+            border: 1px solid #e53935;
+            padding: 7px 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn:active {
+            background: #8b0000;
+            border-color: #ffffff;
+        }
+
+        .btn.secondary {
+            background: #2c2c2c;
+            border: 1px solid var(--line-strong);
+            color: var(--text);
+        }
+
+        .btn.secondary:hover {
+            background: #3a3a3a;
+        }
+
+        .btn.small {
+            padding: 3px 6px;
+            font-size: 0.75rem;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .status-message {
+            min-height: 18px;
+            margin-top: 8px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            font-weight: bold;
+        }
+
+        .status-message.success { color: #81c784; }
+        .status-message.error { color: #e57373; }
+
+        .hidden { display: none !important; }
+
+        .auth-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 12px;
+            background: #0d0d0d;
+            border: 1px solid var(--line);
+        }
+
+        .auth-tab {
+            flex: 1;
+            background: #1c1c1c;
+            color: var(--muted);
+            border: none;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            font-family: inherit;
+        }
+
+        .auth-tab:hover {
+            color: var(--text);
+            background: #2a2a2a;
+        }
+
+        .auth-tab.active {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        /* Categories & Tags */
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .category-btn {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a1a;
+            color: var(--text);
+            border: 1px solid var(--line);
+            padding: 6px 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            font-weight: normal;
+        }
+
+        .category-btn:hover {
+            background: #282828;
+            border-color: var(--line-strong);
+        }
+
+        .category-btn.active {
+            background: #3a1515;
+            border-color: var(--accent);
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .category-count {
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+
+        .category-btn.active .category-count {
+            color: #ff9999;
+        }
+
+        .category-del-btn {
+            background: #222222;
+            color: #e57373;
+            border: 1px solid #444;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .category-del-btn:hover {
+            background: #8b0000;
+            color: #ffffff;
+            border-color: #ff4444;
+        }
+
+        .admin-tag-box {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--line);
+        }
+
+        .admin-tag-form {
+            display: flex;
+            gap: 4px;
+        }
+
+        .admin-tag-form input {
+            flex: 1;
+        }
+
+        /* Tags Picker in Upload / Edit */
+        .tags-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 6px;
+            max-height: 120px;
+            overflow-y: auto;
+            background: #0d0d0d;
+            border: 1px solid var(--line-strong);
+            padding: 6px;
+        }
+
+        .tag-choice {
+            display: inline-flex;
+            align-items: center;
+            background: #1e1e1e;
+            color: var(--muted);
+            border: 1px solid #333;
+            padding: 3px 7px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tag-choice:hover {
+            background: #2a2a2a;
+            color: var(--text);
+        }
+
+        .tag-choice.selected {
+            background: var(--accent);
+            border-color: #ff4444;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        /* Main View */
+        .main {
+            padding: 14px 18px;
+            background: var(--bg);
+        }
+
+        .library-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--line-strong);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .library-headline {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .library-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 14px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line-strong);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            border-color: #888888;
+        }
+
+        .movie-button {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .poster {
+            height: 180px;
+            background: #242424;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            border-bottom: 1px solid var(--line-strong);
+        }
+
+        .movie-info {
+            padding: 10px;
+        }
+
+        .movie-title {
+            margin: 0 0 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .movie-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .tag-pill {
+            display: inline-block;
+            background: #262626;
+            color: #d0d0d0;
+            border: 1px solid #444;
+            padding: 2px 5px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .tag-pill:hover {
+            background: var(--accent);
+            border-color: #ff4444;
+            color: #ffffff;
+        }
+
+        .movie-meta {
+            color: var(--muted);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .movie-actions {
+            display: flex;
+            gap: 4px;
+            padding: 0 10px 10px;
+        }
+
+        .movie-actions .btn {
+            flex: 1;
+            padding: 5px 6px;
+            font-size: 0.75rem;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            width: min(900px, 94vw);
+            background: #181818;
+            border: 2px solid var(--line-strong);
+            overflow: hidden;
+        }
+
+        .auth-modal-content {
+            width: min(400px, 94vw);
+        }
+
+        .tag-modal-content {
+            width: min(460px, 94vw);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--line-strong);
+            background: #222222;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .modal-body {
+            padding: 14px;
+        }
+
+        video {
+            display: block;
+            width: 100%;
+            background: black;
+            max-height: 72vh;
+        }
+
+        @media (max-width: 860px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { border-right: none; border-bottom: 2px solid var(--line-strong); }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-brand">
+            <h1>VRedPlay 'Air</h1>
+        </div>
+        <div class="topbar-actions">
+            <a id="addMovieBtn" href="/upload.html" class="btn" title="Ajouter un film à la médiathèque">+ Ajouter un film</a>
+            <div class="auth-status-container">
+                <span id="authStatus" class="auth-status-text">Non connecté</span>
+                <span id="adminBadge" class="badge-admin hidden">ADMIN</span>
+            </div>
+            <button id="openAuthBtn" type="button" class="btn secondary" onclick="openAuthModal('login')">Login</button>
+            <button id="logoutBtn" type="button" class="btn secondary hidden">Déconnexion</button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <!-- Catégories (Tags) -->
+            <div class="panel category-panel">
+                <h3>Catégories</h3>
+                <div id="categoryList" class="category-list"></div>
+
+                <!-- Admin Tag Add -->
+                <div id="adminTagPanel" class="admin-tag-box hidden">
+                    <form id="addTagForm" class="admin-tag-form">
+                        <input id="newTagInput" type="text" placeholder="Nouveau tag..." required>
+                        <button type="submit" class="btn small">+ Ajouter</button>
+                    </form>
+                    <div id="tagMessage" class="status-message"></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="library-header">
+                <div id="libraryHeadline" class="library-headline">Tous les films</div>
+                <div class="library-controls">
+                    <input id="movieSearch" class="search-box" type="search" placeholder="Rechercher un film, un tag...">
+                </div>
+            </div>
+            <div id="movieGrid" class="grid"></div>
+        </main>
+    </div>
+
+    <!-- Modal Login / Register -->
+    <div id="authModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content auth-modal-content">
+            <div class="modal-header">
+                <h3 id="authModalTitle">Connexion / Inscription</h3>
+                <button id="closeAuthBtn" type="button" class="btn secondary" onclick="closeAuthModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="auth-tabs">
+                    <button id="loginTab" type="button" class="auth-tab active" onclick="setAuthMode('login')">Connexion</button>
+                    <button id="registerTab" type="button" class="auth-tab" onclick="setAuthMode('register')">Créer un compte</button>
+                </div>
+
+                <div id="loginPanel">
+                    <form id="loginForm" onsubmit="return handleLogin(event)">
+                        <div class="field">
+                            <label for="loginUsername">Nom d'utilisateur</label>
+                            <input id="loginUsername" type="text" autocomplete="username" required>
+                        </div>
+                        <div class="field">
+                            <label for="loginPassword">Mot de passe</label>
+                            <input id="loginPassword" type="password" autocomplete="current-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-block">Se connecter</button>
+                    </form>
+                    <div id="loginMessage" class="status-message"></div>
+                </div>
+
+                <div id="registerPanel" class="hidden">
+                    <form id="registerForm" onsubmit="return handleRegister(event)">
+                        <div class="field">
+                            <label for="registerUsername">Nom d'utilisateur</label>
+                            <input id="registerUsername" type="text" autocomplete="new-username" required>
+                        </div>
+                        <div class="field">
+                            <label for="registerPassword">Mot de passe</label>
+                            <input id="registerPassword" type="password" autocomplete="new-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-block">Créer le compte</button>
+                    </form>
+                    <div id="registerMessage" class="status-message"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Tags (Admin/Owner) -->
+    <div id="editTagsModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content tag-modal-content">
+            <div class="modal-header">
+                <h3 id="editTagsTitle">Modifier les tags</h3>
+                <button id="closeEditTagsBtn" type="button" class="btn secondary" onclick="closeEditTagsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="editTagsForm">
+                    <div class="field">
+                        <label>Sélectionner des tags</label>
+                        <div id="editTagsPills" class="tags-picker"></div>
+                    </div>
+                    <div class="field">
+                        <label for="editTagsCustom">Tags supplémentaires (séparés par virgule)</label>
+                        <input id="editTagsCustom" type="text" placeholder="Ex: Action, 4K, VF">
+                    </div>
+                    <button type="submit" class="btn btn-block">Enregistrer les tags</button>
+                </form>
+                <div id="editTagsMessage" class="status-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Player -->
+    <div id="playerModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="playerTitle">Lecture</h3>
+                <button id="closePlayer" type="button" class="btn secondary" onclick="closePlayerModal()">✕</button>
+            </div>
+            <video id="moviePlayer" controls autoplay></video>
+        </div>
+    </div>
+
+    <script src="/frontend.js?v=14"></script>
+</body>
+</html>

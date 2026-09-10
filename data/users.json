@@ -1,0 +1,37 @@
+[
+  {
+    "id": "admin-system-id-000000000000",
+    "username": "admin",
+    "passwordHash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+    "isAdmin": true,
+    "createdAt": "2026-08-21T10:00:00.000Z"
+  },
+  {
+    "id": "bd2dacd3-bd88-4ff3-90b0-261c8e806b24",
+    "username": "demojs",
+    "passwordHash": "f2d81a260dea8a100dd517984e53c56a7523d96942a834b9cdc249bd4e8c7aa9",
+    "isAdmin": false,
+    "createdAt": "2026-08-20T21:39:19.616Z"
+  },
+  {
+    "id": "e05ab622-72ab-46f8-880a-11349e5e35a4",
+    "username": "demo2",
+    "passwordHash": "f2d81a260dea8a100dd517984e53c56a7523d96942a834b9cdc249bd4e8c7aa9",
+    "isAdmin": false,
+    "createdAt": "2026-08-20T21:50:45.201Z"
+  },
+  {
+    "id": "ba0eba39-198e-4faa-a269-12e05aabc2c4",
+    "username": "foxter",
+    "passwordHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    "isAdmin": true,
+    "createdAt": "2026-08-20T21:51:59.599Z"
+  },
+  {
+    "id": "05d19501-dcd0-4781-b46c-7b027b7945ad",
+    "username": "foxxo",
+    "passwordHash": "b909316ffee3441d27332a739fb31e8e099178b48fb214d6f00d6b0bbd927507",
+    "isAdmin": false,
+    "createdAt": "2026-08-21T10:56:28.517Z"
+  }
+]

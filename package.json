@@ -1,0 +1,19 @@
+{
+  "name": "vred-mediatheque",
+  "version": "1.0.0",
+  "description": "VRed Médiathèque Backend Node.js Express",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "mediatheque",
+    "video",
+    "streaming"
+  ],
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
+  }
+}

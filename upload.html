@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - VRedPlay 'Air</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1c1c1c;
+            --panel-2: #242424;
+            --line: #383838;
+            --line-strong: #505050;
+            --text: #ededed;
+            --muted: #9e9e9e;
+            --accent: #cc2222;
+            --accent-hover: #b01b1b;
+            --green: #388e3c;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            border-radius: 0 !important;
+            transition: none !important;
+            animation: none !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 18px;
+            background: #1a1a1a;
+            border-bottom: 2px solid var(--line-strong);
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topbar-brand h1 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .topbar-brand a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auth-status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .badge-admin {
+            display: inline-block;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border: 1px solid #ff4444;
+            letter-spacing: 0.05em;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 14px;
+            background: var(--accent);
+            color: #fff;
+            border: 1px solid #e03333;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn.secondary {
+            background: var(--panel-2);
+            color: var(--text);
+            border: 1px solid var(--line);
+        }
+
+        .btn.secondary:hover {
+            background: #2e2e2e;
+            border-color: var(--line-strong);
+        }
+
+        .btn.btn-block {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .container {
+            max-width: 720px;
+            width: 100%;
+            margin: 30px auto;
+            padding: 0 15px;
+            flex: 1;
+        }
+
+        .upload-card {
+            background: var(--panel);
+            border: 2px solid var(--line-strong);
+            padding: 24px;
+        }
+
+        .upload-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--line);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+        }
+
+        .upload-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #fff;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid-full {
+            grid-column: 1 / -1;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #bbb;
+        }
+
+        .field input[type="text"],
+        .field select {
+            width: 100%;
+            padding: 9px 12px;
+            background: #141414;
+            color: #fff;
+            border: 1px solid var(--line);
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .field input[type="text"]:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: #181818;
+        }
+
+        .tags-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+            background: #161616;
+            padding: 10px;
+            border: 1px solid var(--line);
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .tag-choice {
+            display: inline-block;
+            padding: 4px 9px;
+            background: var(--panel-2);
+            color: var(--text);
+            border: 1px solid var(--line);
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tag-choice:hover {
+            border-color: var(--line-strong);
+            background: #2a2a2a;
+        }
+
+        .tag-choice.selected {
+            background: var(--accent);
+            color: #fff;
+            border-color: #ff4444;
+        }
+
+        .file-dropzone {
+            border: 2px dashed var(--line-strong);
+            background: #151515;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .file-dropzone:hover,
+        .file-dropzone.dragover {
+            border-color: var(--accent);
+            background: #1a1515;
+        }
+
+        .file-dropzone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-dropzone-icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .file-dropzone-text {
+            font-weight: bold;
+            color: #ccc;
+            margin-bottom: 4px;
+        }
+
+        .file-dropzone-sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .file-selected-info {
+            margin-top: 10px;
+            padding: 8px;
+            background: #202020;
+            border: 1px solid var(--line);
+            font-size: 0.85rem;
+            color: #4caf50;
+            font-weight: bold;
+            display: none;
+        }
+
+        .progress-box {
+            display: none;
+            margin: 16px 0;
+            background: #161616;
+            border: 1px solid var(--line);
+            padding: 12px;
+        }
+
+        .progress-bar-bg {
+            height: 16px;
+            background: #222;
+            border: 1px solid var(--line-strong);
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            color: #ddd;
+        }
+
+        .status-message {
+            margin-top: 14px;
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: none;
+        }
+
+        .status-message.error {
+            display: block;
+            background: #331111;
+            color: #ff6b6b;
+            border: 1px solid #992222;
+        }
+
+        .status-message.success {
+            display: block;
+            background: #113311;
+            color: #6bff6b;
+            border: 1px solid #229922;
+        }
+
+        .not-logged-in-box {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .not-logged-in-box h3 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: #ff6b6b;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-brand">
+            <a href="/"><h1>VRedPlay 'Air</h1></a>
+        </div>
+        <div class="topbar-actions">
+            <a href="/" class="btn secondary">← Retour au catalogue</a>
+            <div class="auth-status-container">
+                <span id="authStatus" class="auth-status-text">Chargement...</span>
+                <span id="adminBadge" class="badge-admin hidden">ADMIN</span>
+            </div>
+            <button id="logoutBtn" type="button" class="btn secondary hidden" onclick="handleLogout()">Déconnexion</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="upload-card">
+            <div class="upload-header">
+                <h2>🎬 Ajouter un nouveau film</h2>
+            </div>
+
+            <!-- Login warning if not connected -->
+            <div id="authRequiredNotice" class="not-logged-in-box hidden">
+                <h3>⚠️ Connexion requise</h3>
+                <p>Vous devez être connecté à votre compte pour ajouter une vidéo dans la médiathèque.</p>
+                <div style="margin-top: 20px;">
+                    <a href="/" class="btn">Se connecter sur le catalogue</a>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="dedicatedUploadForm">
+                <div class="field">
+                    <label for="videoTitle">Titre du film</label>
+                    <input id="videoTitle" type="text" placeholder="Ex: Inception, Le Parrain, etc." required>
+                </div>
+
+                <div class="field">
+                    <label>Catégories & Tags (sélectionnez un ou plusieurs tags)</label>
+                    <div id="uploadTagsPills" class="tags-picker">
+                        <!-- Dynamic tag choices -->
+                    </div>
+                    <input id="videoTagsCustom" type="text" placeholder="Tags supplémentaires personnalisés (séparés par des virgules)">
+                </div>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="videoQuality">Qualité vidéo</label>
+                        <select id="videoQuality">
+                            <option value="2160p">2160p (4K UHD)</option>
+                            <option value="1080p" selected>1080p (Full HD)</option>
+                            <option value="720p">720p (HD)</option>
+                            <option value="480p">480p (SD)</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="videoLanguage">Version linguistique</label>
+                        <select id="videoLanguage">
+                            <option value="VF" selected>VF (Version Française)</option>
+                            <option value="VOSTFR">VOSTFR (Sous-titres FR)</option>
+                            <option value="VO">VO (Version Originale)</option>
+                            <option value="MULTI">MULTI (Multi-langues)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Fichier vidéo</label>
+                    <div id="fileDropzone" class="file-dropzone">
+                        <input id="videoFile" type="file" accept="video/*" required>
+                        <div class="file-dropzone-icon">📁</div>
+                        <div class="file-dropzone-text">Cliquez ou glissez-déposez le fichier vidéo ici</div>
+                        <div class="file-dropzone-sub">Formats acceptés : MP4, MKV, AVI, WEBM, MOV</div>
+                    </div>
+                    <div id="fileSelectedInfo" class="file-selected-info"></div>
+                </div>
+
+                <!-- Live Progress Bar -->
+                <div id="progressBox" class="progress-box">
+                    <div class="progress-bar-bg">
+                        <div id="progressBarFill" class="progress-bar-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressStatus">Envoi du fichier en cours...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+
+                <button id="submitUploadBtn" type="submit" class="btn btn-block">🚀 Publier le film</button>
+            </form>
+
+            <div id="uploadMessage" class="status-message"></div>
+        </div>
+    </div>
+
+    <script>
+        const apiBase = '/api';
+        let currentUser = null;
+        let isUploading = false;
+        let availableTags = ['Action', 'Animation', 'Aventure', 'Comédie', 'Documentaire', 'Drame', 'Fantastique', 'Horreur', 'Policier', 'Sci-Fi', 'Séries', 'Thriller', 'Films', 'Autre'];
+        let selectedTags = new Set(['Films']);
+
+        // Protection contre la fermeture accidentelle de l'onglet pendant l'upload
+        window.addEventListener('beforeunload', (e) => {
+            if (isUploading) {
+                e.preventDefault();
+                e.returnValue = 'Un upload de film est en cours. Si vous fermez cet onglet, le transfert sera annulé.';
+                return e.returnValue;
+            }
+        });
+
+        // Interception des clics sur les liens si un upload tourne
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && isUploading) {
+                if (!confirm('⚠️ Un upload de film est en cours d’envoi.\nSi vous quittez cette page maintenant, le transfert sera interrompu.\n\nVoulez-vous vraiment quitter ?')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        });
+
+        const authStatus = document.getElementById('authStatus');
+        const adminBadge = document.getElementById('adminBadge');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authRequiredNotice = document.getElementById('authRequiredNotice');
+        const dedicatedUploadForm = document.getElementById('dedicatedUploadForm');
+        const uploadTagsPills = document.getElementById('uploadTagsPills');
+        const videoTagsCustom = document.getElementById('videoTagsCustom');
+        const videoFile = document.getElementById('videoFile');
+        const fileSelectedInfo = document.getElementById('fileSelectedInfo');
+        const progressBox = document.getElementById('progressBox');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressStatus = document.getElementById('progressStatus');
+        const submitUploadBtn = document.getElementById('submitUploadBtn');
+        const uploadMessage = document.getElementById('uploadMessage');
+
+        function showMessage(msg, type = '') {
+            if (!msg) {
+                uploadMessage.style.display = 'none';
+                uploadMessage.textContent = '';
+                uploadMessage.className = 'status-message';
+                return;
+            }
+            uploadMessage.textContent = msg;
+            uploadMessage.className = `status-message ${type}`;
+            uploadMessage.style.display = 'block';
+        }
+
+        async function init() {
+            try {
+                const res = await fetch(`${apiBase}/me`, { credentials: 'same-origin' });
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUser = data.user;
+                }
+            } catch (e) {
+                currentUser = null;
+            }
+
+            if (currentUser) {
+                authStatus.textContent = `Connecté : ${currentUser.username}`;
+                if (currentUser.isAdmin) adminBadge.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                dedicatedUploadForm.classList.remove('hidden');
+                authRequiredNotice.classList.add('hidden');
+            } else {
+                authStatus.textContent = 'Non connecté';
+                logoutBtn.classList.add('hidden');
+                dedicatedUploadForm.classList.add('hidden');
+                authRequiredNotice.classList.remove('hidden');
+            }
+
+            // Load Tags
+            try {
+                const tagRes = await fetch(`${apiBase}/tags`, { credentials: 'same-origin' });
+                if (tagRes.ok) {
+                    const tagData = await tagRes.json();
+                    if (Array.isArray(tagData.tags) && tagData.tags.length) {
+                        availableTags = tagData.tags;
+                    }
+                }
+            } catch (e) {}
+
+            renderTags();
+        }
+
+        function renderTags() {
+            uploadTagsPills.innerHTML = '';
+            availableTags.forEach(tag => {
+                const span = document.createElement('span');
+                const isSelected = selectedTags.has(tag);
+                span.className = `tag-choice ${isSelected ? 'selected' : ''}`;
+                span.textContent = tag;
+                span.addEventListener('click', () => {
+                    if (selectedTags.has(tag)) {
+                        selectedTags.delete(tag);
+                    } else {
+                        selectedTags.add(tag);
+                    }
+                    renderTags();
+                });
+                uploadTagsPills.appendChild(span);
+            });
+        }
+
+        // File selection feedback
+        videoFile.addEventListener('change', () => {
+            const file = videoFile.files[0];
+            if (file) {
+                const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                fileSelectedInfo.textContent = `✓ Fichier sélectionné : ${file.name} (${sizeMb} Mo)`;
+                fileSelectedInfo.style.display = 'block';
+
+                // Auto-fill title if empty
+                const titleInput = document.getElementById('videoTitle');
+                if (!titleInput.value.trim()) {
+                    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[\._-]/g, ' ');
+                    titleInput.value = cleanName;
+                }
+            } else {
+                fileSelectedInfo.style.display = 'none';
+            }
+        });
+
+        // Form Submission with Live Progress
+        dedicatedUploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showMessage('Vous devez être connecté pour publier une vidéo.', 'error');
+                return;
+            }
+
+            const file = videoFile.files[0];
+            if (!file) {
+                showMessage('Veuillez sélectionner un fichier vidéo.', 'error');
+                return;
+            }
+
+            const title = document.getElementById('videoTitle').value.trim() || file.name;
+            const quality = document.getElementById('videoQuality').value;
+            const language = document.getElementById('videoLanguage').value;
+
+            const selectedList = Array.from(selectedTags);
+            const customList = (videoTagsCustom.value || '')
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+
+            const combinedTags = [...new Set([...selectedList, ...customList])];
+            if (!combinedTags.length) combinedTags.push('Films');
+            const primaryCategory = combinedTags[0] || 'Films';
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('category', primaryCategory);
+            formData.append('tags', JSON.stringify(combinedTags));
+            formData.append('quality', quality);
+            formData.append('language', language);
+            formData.append('file', file);
+
+            isUploading = true;
+            showMessage('', '');
+            progressBox.style.display = 'block';
+            progressBarFill.style.width = '0%';
+            progressPercent.textContent = '0%';
+            progressStatus.textContent = 'Préparation de l’envoi...';
+            submitUploadBtn.disabled = true;
+            submitUploadBtn.textContent = 'Envoi en cours...';
+
+            const CHUNK_SIZE = 20 * 1024 * 1024; // 20 Mo par morceau (compatible limite Cloudflare 100 Mo)
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const uploadId = 'up_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+
+            async function uploadNextChunk(chunkIndex) {
+                const start = chunkIndex * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunkBlob = file.slice(start, end);
+
+                const formData = new FormData();
+                formData.append('uploadId', uploadId);
+                formData.append('chunkIndex', chunkIndex);
+                formData.append('totalChunks', totalChunks);
+                formData.append('filename', file.name);
+                formData.append('title', title);
+                formData.append('category', primaryCategory);
+                formData.append('tags', JSON.stringify(combinedTags));
+                formData.append('quality', quality);
+                formData.append('language', language);
+                formData.append('chunk', chunkBlob, file.name);
+
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', `${apiBase}/videos/chunk`, true);
+                    xhr.withCredentials = true;
+
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            const currentChunkLoaded = event.loaded;
+                            const overallLoaded = start + currentChunkLoaded;
+                            const percent = Math.min(99, Math.round((overallLoaded / file.size) * 100));
+                            progressBarFill.style.width = `${percent}%`;
+                            progressPercent.textContent = `${percent}%`;
+                            progressStatus.textContent = `Envoi : morceau ${chunkIndex + 1}/${totalChunks} (${percent}%)`;
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const resData = JSON.parse(xhr.responseText);
+                                resolve(resData);
+                            } catch (e) {
+                                resolve({ ok: true });
+                            }
+                        } else {
+                            let err = `Erreur sur le morceau ${chunkIndex + 1}`;
+                            try {
+                                const resJson = JSON.parse(xhr.responseText);
+                                if (resJson.error) err = `Erreur : ${resJson.error}`;
+                            } catch (e) {}
+                            reject(new Error(err));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('Erreur réseau lors de l’envoi'));
+                    xhr.send(formData);
+                });
+            }
+
+            (async () => {
+                try {
+                    for (let i = 0; i < totalChunks; i++) {
+                        let retries = 3;
+                        while (retries > 0) {
+                            try {
+                                await uploadNextChunk(i);
+                                break;
+                            } catch (err) {
+                                retries--;
+                                if (retries === 0) throw err;
+                                progressStatus.textContent = `Nouvelle tentative morceau ${i + 1}/${totalChunks}...`;
+                                await new Promise(r => setTimeout(r, 1500));
+                            }
+                        }
+                    }
+
+                    progressBarFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    progressStatus.textContent = 'Traitement par le serveur...';
+
+                    isUploading = false;
+                    submitUploadBtn.disabled = false;
+                    submitUploadBtn.textContent = '🚀 Publier le film';
+                    showMessage(`🎉 Film « ${title} » ajouté avec succès ! Redirection vers le catalogue...`, 'success');
+                    dedicatedUploadForm.reset();
+                    fileSelectedInfo.style.display = 'none';
+                    selectedTags = new Set(['Films']);
+                    renderTags();
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1200);
+                } catch (error) {
+                    isUploading = false;
+                    submitUploadBtn.disabled = false;
+                    submitUploadBtn.textContent = '🚀 Publier le film';
+                    showMessage(error.message || 'Erreur lors de l’upload du film.', 'error');
+                    progressBox.style.display = 'none';
+                }
+            })();
+        });
+
+        async function handleLogout() {
+            try {
+                await fetch(`${apiBase}/logout`, { method: 'POST', credentials: 'same-origin' });
+            } catch (e) {}
+            window.location.href = '/';
+        }
+
+        init();
+    </script>
+</body>
+</html>
+

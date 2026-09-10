@@ -1,0 +1,25 @@
+[2026-09-04 19:24:00] [INFO  ] [visiteur@inconnue] Serveur VRedPlay Air démarré sur http://0.0.0.0:8000
+[2026-09-04 19:24:05] [PLAY  ] [visiteur@127.0.0.1] Film lancé : "Return To Silent Hill 2026" (Fichier: return-to-silent-hill.mp4)
+[2026-09-04 19:24:14] [INFO  ] [visiteur@inconnue] Serveur VRedPlay Air démarré sur http://0.0.0.0:8000
+[2026-09-04 19:24:38] [CHUNK ] [foxxo@176.138.49.79] Morceau 21/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:24:56] [CHUNK ] [foxxo@176.138.49.79] Morceau 21/41 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:24:58] [CHUNK ] [foxxo@176.138.49.79] Morceau 21/78 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:25:51] [CHUNK ] [foxxo@176.138.49.79] Morceau 31/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:26:08] [CHUNK ] [foxxo@176.138.49.79] Morceau 31/41 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:26:10] [CHUNK ] [foxxo@176.138.49.79] Morceau 31/78 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:27:06] [CHUNK ] [foxxo@176.138.49.79] Morceau 41/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:27:21] [INFO  ] [foxxo@176.138.49.79] Assemblage de 41 morceaux pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv" -> mission-impossible-1-1080p-fr-en-x264-ac3-mhdgz-mkv-1080p-vf.mp4...
+[2026-09-04 19:27:24] [CHUNK ] [foxxo@176.138.49.79] Morceau 41/78 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:27:24] [UPLOAD] [foxxo@176.138.49.79] Film complet réassemblé et publié : "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv" (1080p, VF) -> mission-impossible-1-1080p-fr-en-x264-ac3-mhdgz-mkv-1080p-vf.mp4 (41 morceaux)
+[2026-09-04 19:28:05] [CHUNK ] [foxxo@176.138.49.79] Morceau 51/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:28:16] [CHUNK ] [foxxo@176.138.49.79] Morceau 51/78 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:28:50] [CHUNK ] [foxxo@176.138.49.79] Morceau 61/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:29:04] [CHUNK ] [foxxo@176.138.49.79] Morceau 61/78 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:29:43] [CHUNK ] [foxxo@176.138.49.79] Morceau 71/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:29:57] [CHUNK ] [foxxo@176.138.49.79] Morceau 71/78 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:30:32] [INFO  ] [foxxo@176.138.49.79] Assemblage de 78 morceaux pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv" -> mission-impossible-1-1080p-fr-en-x264-ac3-mhdgz-mkv-1080p-vf-2.mp4...
+[2026-09-04 19:30:35] [CHUNK ] [foxxo@176.138.49.79] Morceau 81/88 reçu pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv"
+[2026-09-04 19:30:39] [UPLOAD] [foxxo@176.138.49.79] Film complet réassemblé et publié : "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv" (1080p, VF) -> mission-impossible-1-1080p-fr-en-x264-ac3-mhdgz-mkv-1080p-vf-2.mp4 (78 morceaux)
+[2026-09-04 19:30:50] [INFO  ] [foxxo@176.138.49.79] Assemblage de 88 morceaux pour "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv" -> mission-impossible-1-1080p-fr-en-x264-ac3-mhdgz-mkv-1080p-vf-3.mp4...
+[2026-09-04 19:31:00] [UPLOAD] [foxxo@176.138.49.79] Film complet réassemblé et publié : "Mission Impossible 1   1080p FR EN x264 ac3 mHDgz mkv" (1080p, VF) -> mission-impossible-1-1080p-fr-en-x264-ac3-mhdgz-mkv-1080p-vf-3.mp4 (88 morceaux)
+[2026-09-08 21:09:00] [INFO  ] [visiteur@inconnue] Serveur VRedPlay Air démarré sur http://0.0.0.0:8000

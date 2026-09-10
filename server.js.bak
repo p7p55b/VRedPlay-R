@@ -1,0 +1,627 @@
+const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+const app = express();
+const PORT = 8000;
+const ROOT = __dirname;
+const DATA_DIR = path.join(ROOT, 'data');
+const UPLOAD_DIR = path.join(ROOT, 'uploads');
+const SITE_DIR_NAME = 'lenomdusite.xxx';
+const SITE_UPLOAD_DIR = path.join(UPLOAD_DIR, SITE_DIR_NAME);
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const VIDEOS_FILE = path.join(DATA_DIR, 'videos.json');
+const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
+
+fs.mkdirSync(DATA_DIR, { recursive: true });
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(SITE_UPLOAD_DIR, { recursive: true });
+
+const DEFAULT_TAGS = [
+  'Action',
+  'Animation',
+  'Aventure',
+  'Comédie',
+  'Documentaire',
+  'Drame',
+  'Fantastique',
+  'Horreur',
+  'Policier',
+  'Sci-Fi',
+  'Séries',
+  'Thriller',
+  'Films',
+  'Autre'
+];
+
+function generateId() {
+  if (typeof crypto.randomUUID === 'function') {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      // fallback
+    }
+  }
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function ensureFile(filePath, defaultData) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, JSON.stringify(defaultData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.error(`Error ensuring file ${filePath}:`, err);
+  }
+}
+
+ensureFile(USERS_FILE, []);
+ensureFile(SESSIONS_FILE, {});
+ensureFile(VIDEOS_FILE, []);
+ensureFile(TAGS_FILE, DEFAULT_TAGS);
+
+function readJson(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const content = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeJson(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.error(`Error writing file ${filePath}:`, err);
+  }
+}
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(String(password || '')).digest('hex');
+}
+
+function getUsers() {
+  const users = readJson(USERS_FILE);
+  return Array.isArray(users) ? users : [];
+}
+
+function saveUsers(users) {
+  writeJson(USERS_FILE, users);
+}
+
+function getSessions() {
+  const sessions = readJson(SESSIONS_FILE);
+  return sessions && typeof sessions === 'object' && !Array.isArray(sessions) ? sessions : {};
+}
+
+function saveSessions(sessions) {
+  writeJson(SESSIONS_FILE, sessions);
+}
+
+function getVideos() {
+  const videos = readJson(VIDEOS_FILE);
+  return Array.isArray(videos) ? videos : [];
+}
+
+function saveVideos(videos) {
+  writeJson(VIDEOS_FILE, videos);
+}
+
+function getTags() {
+  const tags = readJson(TAGS_FILE);
+  return Array.isArray(tags) && tags.length ? tags : DEFAULT_TAGS;
+}
+
+function saveTags(tags) {
+  writeJson(TAGS_FILE, tags);
+}
+
+function randomToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function getUserFromCookie(req) {
+  try {
+    const cookie = req.headers.cookie || '';
+    const tokenPart = cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith('session='));
+    if (!tokenPart) return null;
+    const sessionToken = tokenPart.split('=')[1];
+    if (!sessionToken) return null;
+    const sessions = getSessions();
+    const userId = sessions[sessionToken];
+    if (!userId) return null;
+    const users = getUsers();
+    const user = users.find((entry) => entry && entry.id === userId);
+    return user || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Lax`);
+}
+
+function clearSessionCookie(res) {
+  res.setHeader('Set-Cookie', 'session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+}
+
+function normalizeTags(rawTags) {
+  if (!rawTags) return ['Autre'];
+  let tagsList = [];
+  if (Array.isArray(rawTags)) {
+    tagsList = rawTags;
+  } else if (typeof rawTags === 'string') {
+    try {
+      const parsed = JSON.parse(rawTags);
+      if (Array.isArray(parsed)) tagsList = parsed;
+      else tagsList = rawTags.split(',');
+    } catch {
+      tagsList = rawTags.split(',');
+    }
+  }
+  const clean = tagsList
+    .map((t) => String(t || '').trim())
+    .filter((t) => t.length > 0);
+  return clean.length ? [...new Set(clean)] : ['Autre'];
+}
+
+function normalizeTitle(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .trim();
+}
+
+function ensureUniqueName(baseName, extension) {
+  const candidate = `${baseName}${extension}`;
+  const targetPath = path.join(SITE_UPLOAD_DIR, candidate);
+  if (!fs.existsSync(targetPath)) {
+    return candidate;
+  }
+
+  let counter = 2;
+  while (fs.existsSync(path.join(SITE_UPLOAD_DIR, `${baseName}-${counter}${extension}`))) {
+    counter += 1;
+  }
+
+  return `${baseName}-${counter}${extension}`;
+}
+
+function discoverLocalLibraryVideos() {
+  const recognized = new Set(['.mkv', '.mp4', '.avi', '.mov', '.m4v', '.webm', '.mpeg', '.mpg']);
+  const results = [];
+
+  function walk(currentDir) {
+    try {
+      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+          if (['data', 'uploads', 'node_modules', '.git'].includes(entry.name)) {
+            continue;
+          }
+          walk(fullPath);
+          continue;
+        }
+
+        const extension = path.extname(entry.name).toLowerCase();
+        if (!recognized.has(extension)) continue;
+
+        const relativePath = path.relative(ROOT, fullPath).replace(/\\/g, '/');
+        if (relativePath.startsWith('data/') || relativePath.startsWith('uploads/') || relativePath.startsWith('node_modules/')) {
+          continue;
+        }
+
+        const title = path.basename(entry.name, extension);
+        let tags = ['Films'];
+        if (title.toLowerCase().includes('montecristo')) {
+          tags = ['Films', 'Aventure', 'Drame'];
+        }
+
+        results.push({
+          id: `library:${relativePath}`,
+          title,
+          tags,
+          quality: '1080p',
+          language: 'VF',
+          filename: relativePath,
+          mimeType: `video/${extension === '.mkv' ? 'x-matroska' : extension.slice(1)}`,
+          src: `/${encodeURI(relativePath)}`,
+          sourceType: 'library',
+          createdAt: new Date(fs.statSync(fullPath).mtime).toISOString()
+        });
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  walk(ROOT);
+  return results.sort((a, b) => a.title.localeCompare(b.title, 'fr'));
+}
+
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ extended: true, limit: '200mb' }));
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use(`/${SITE_DIR_NAME}`, express.static(SITE_UPLOAD_DIR));
+app.use(express.static(ROOT));
+
+const RECOGNIZED_VIDEO_EXTS = new Set(['.mp4', '.mkv', '.avi', '.mov', '.webm', '.m4v', '.mpeg', '.mpg', '.wmv', '.flv', '.ts', '.m2ts', '.vob', '.iso']);
+
+const uploadStorage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, SITE_UPLOAD_DIR);
+  },
+  filename: function (req, file, cb) {
+    const extension = path.extname(file.originalname).toLowerCase() || '.mp4';
+    const title = String(req.body.title || path.parse(file.originalname).name || 'video').trim();
+    const quality = String(req.body.quality || '1080p').trim().replace(/\s+/g, '').toLowerCase();
+    const language = String(req.body.language || 'VF').trim().toUpperCase();
+    const baseName = normalizeTitle(`${title}-${quality}-${language}`) || 'video';
+    const uniqueName = ensureUniqueName(baseName, extension);
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 50 * 1024 * 1024 * 1024 }, // 50 Go
+  fileFilter: function (_req, file, cb) {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (
+      (file.mimetype && file.mimetype.startsWith('video/')) ||
+      RECOGNIZED_VIDEO_EXTS.has(ext) ||
+      file.mimetype === 'application/octet-stream' ||
+      file.mimetype === 'application/x-matroska'
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non supporté'));
+    }
+  }
+});
+
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true });
+});
+
+app.get('/api/me', (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    if (!user) {
+      return res.status(401).json({ error: 'non_authentifie' });
+    }
+    res.json({ user: { id: user.id, username: user.username, isAdmin: Boolean(user.isAdmin) } });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+app.post('/api/register', (req, res) => {
+  try {
+    const body = req.body || {};
+    const username = String(body.username || '').trim();
+    const password = String(body.password || '');
+
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'pseudo_trop_court' });
+    }
+    if (password.length < 4) {
+      return res.status(400).json({ error: 'mot_de_passe_trop_court' });
+    }
+
+    const users = getUsers();
+    if (users.some((user) => user && user.username && user.username.toLowerCase() === username.toLowerCase())) {
+      return res.status(409).json({ error: 'compte_existe' });
+    }
+
+    const newUser = {
+      id: generateId(),
+      username,
+      passwordHash: hashPassword(password),
+      isAdmin: users.length === 0,
+      createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    saveUsers(users);
+
+    const token = randomToken();
+    const sessions = getSessions();
+    sessions[token] = newUser.id;
+    saveSessions(sessions);
+    setSessionCookie(res, token);
+
+    return res.status(201).json({
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        isAdmin: Boolean(newUser.isAdmin)
+      }
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    return res.status(500).json({ error: 'erreur_serveur', details: err.message });
+  }
+});
+
+app.post('/api/login', (req, res) => {
+  try {
+    const body = req.body || {};
+    const username = String(body.username || '').trim();
+    const password = String(body.password || '');
+    const users = getUsers();
+    const user = users.find(
+      (entry) => entry && entry.username && entry.username.toLowerCase() === username.toLowerCase()
+    );
+
+    if (!user || user.passwordHash !== hashPassword(password)) {
+      return res.status(401).json({ error: 'identifiants_incorrects' });
+    }
+
+    const token = randomToken();
+    const sessions = getSessions();
+    sessions[token] = user.id;
+    saveSessions(sessions);
+    setSessionCookie(res, token);
+
+    return res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        isAdmin: Boolean(user.isAdmin)
+      }
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    return res.status(500).json({ error: 'erreur_serveur', details: err.message });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  try {
+    const cookie = req.headers.cookie || '';
+    const tokenPart = cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith('session='));
+    if (tokenPart) {
+      const token = tokenPart.split('=')[1];
+      if (token) {
+        const sessions = getSessions();
+        delete sessions[token];
+        saveSessions(sessions);
+      }
+    }
+    clearSessionCookie(res);
+    res.json({ ok: true });
+  } catch (err) {
+    clearSessionCookie(res);
+    res.json({ ok: true });
+  }
+});
+
+// Tags API
+app.get('/api/tags', (_req, res) => {
+  res.json({ tags: getTags() });
+});
+
+app.post('/api/tags', (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'acces_refuse_admin_requis' });
+    }
+
+    const body = req.body || {};
+    const tag = String(body.tag || body.name || '').trim();
+    if (!tag) {
+      return res.status(400).json({ error: 'tag_invalide' });
+    }
+
+    const tags = getTags();
+    if (!tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+      tags.push(tag);
+      tags.sort((a, b) => a.localeCompare(b, 'fr'));
+      saveTags(tags);
+    }
+
+    res.status(201).json({ ok: true, tags: getTags() });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+app.delete('/api/tags/:name', (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'acces_refuse_admin_requis' });
+    }
+
+    const targetName = decodeURIComponent(req.params.name).trim().toLowerCase();
+    let tags = getTags();
+    tags = tags.filter((t) => t.toLowerCase() !== targetName);
+    saveTags(tags);
+
+    res.json({ ok: true, tags: getTags() });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+// Video list
+app.get('/api/videos', (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    const siteVideos = discoverLocalLibraryVideos();
+    const allUserVideos = getVideos();
+
+    const userVideos = user
+      ? (user.isAdmin ? allUserVideos : allUserVideos.filter((video) => video && video.userId === user.id))
+      : [];
+
+    const videos = [...siteVideos, ...userVideos].map((video) => {
+      let videoTags = video.tags;
+      if (!videoTags || !Array.isArray(videoTags) || !videoTags.length) {
+        videoTags = video.category ? [video.category] : ['Films'];
+      }
+
+      return {
+        id: video.id,
+        userId: video.userId,
+        title: video.title,
+        tags: normalizeTags(videoTags),
+        quality: video.quality || '1080p',
+        language: video.language || 'VF',
+        filename: video.filename || video.src?.replace(/^\//, ''),
+        mimeType: video.mimeType || 'video/mp4',
+        src: video.src || `/${SITE_DIR_NAME}/${video.filename}`,
+        sourceType: video.sourceType || 'user',
+        createdAt: video.createdAt
+      };
+    });
+
+    res.json({ videos });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+// Video upload
+app.post('/api/videos', upload.single('file'), (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    if (!user) {
+      return res.status(401).json({ error: 'non_authentifie' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'video_absente' });
+    }
+
+    const title = String(req.body.title || '').trim() || path.parse(req.file.originalname).name || 'Vidéo perso';
+    const tags = normalizeTags(req.body.tags || req.body.category || 'Films');
+    const quality = String(req.body.quality || '1080p').trim() || '1080p';
+    const language = String(req.body.language || 'VF').trim() || 'VF';
+    const relativeFileName = req.file.filename;
+
+    const currentTags = getTags();
+    let tagsUpdated = false;
+    tags.forEach((t) => {
+      if (!currentTags.some((ct) => ct.toLowerCase() === t.toLowerCase())) {
+        currentTags.push(t);
+        tagsUpdated = true;
+      }
+    });
+    if (tagsUpdated) {
+      currentTags.sort((a, b) => a.localeCompare(b, 'fr'));
+      saveTags(currentTags);
+    }
+
+    const videos = getVideos();
+    const video = {
+      id: generateId(),
+      userId: user.id,
+      title,
+      tags,
+      quality,
+      language,
+      filename: relativeFileName,
+      mimeType: req.file.mimetype || 'video/mp4',
+      createdAt: new Date().toISOString()
+    };
+    videos.push(video);
+    saveVideos(videos);
+
+    res.status(201).json({
+      video: {
+        id: video.id,
+        userId: video.userId,
+        title: video.title,
+        tags: video.tags,
+        quality: video.quality,
+        language: video.language,
+        filename: video.filename,
+        mimeType: video.mimeType,
+        src: `/${SITE_DIR_NAME}/${video.filename}`
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+// Update video tags (Admin or owner)
+app.post('/api/videos/:id/tags', (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    if (!user) {
+      return res.status(401).json({ error: 'non_authentifie' });
+    }
+
+    const videos = getVideos();
+    const video = videos.find((v) => v && v.id === req.params.id);
+    if (!video) {
+      return res.status(404).json({ error: 'video_introuvable' });
+    }
+
+    if (video.userId !== user.id && !user.isAdmin) {
+      return res.status(403).json({ error: 'acces_interdit' });
+    }
+
+    const newTags = normalizeTags(req.body.tags);
+    video.tags = newTags;
+    saveVideos(videos);
+
+    res.json({ ok: true, video });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+// Delete video (Admin or owner)
+app.delete('/api/videos/:id', (req, res) => {
+  try {
+    const user = getUserFromCookie(req);
+    if (!user) {
+      return res.status(401).json({ error: 'non_authentifie' });
+    }
+
+    const videos = getVideos();
+    const idx = videos.findIndex(
+      (video) => video && video.id === req.params.id && (video.userId === user.id || user.isAdmin)
+    );
+    if (idx === -1) {
+      return res.status(404).json({ error: 'video_introuvable' });
+    }
+
+    const removed = videos[idx];
+    const filePath = path.join(SITE_UPLOAD_DIR, removed.filename);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    videos.splice(idx, 1);
+    saveVideos(videos);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'erreur_serveur' });
+  }
+});
+
+app.use((error, _req, res, _next) => {
+  if (error && error.message === 'Type de fichier non supporté') {
+    return res.status(400).json({ error: 'fichier_non_video' });
+  }
+  return res.status(500).json({ error: 'erreur_serveur' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend JS running on http://0.0.0.0:${PORT}`);
+});
