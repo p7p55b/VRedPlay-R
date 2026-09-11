@@ -1,12 +1,16 @@
-# User uploads and chunks
-uploads/films/
-uploads/.chunks/
+# Node dependencies
+node_modules/
 
-# Logs and session files
+# User uploads and media files
+uploads/*
+!uploads/.gitkeep
+
+# Logs and runtime session files
 data/activity*.log
 data/sessions.json
 
 # Backups and temporary files
 *.bak
+*.log
 .DS_Store
 Thumbs.db
