@@ -659,7 +659,7 @@ async function handleRegister(event) {
     let msg = 'Erreur lors de la création du compte.';
     if (error.message === 'accnt_alrdy_exst') {
       msg = `Ce nom d'utilisateur (${username}) existe déjà. Choisissez un autre nom ou connectez-vous.`;
-    } else if (error.message === 'usrnm_t_shrt) {
+    } else if (error.message === 'usrnm_t_shrt') {
       msg = 'Le nom d’utilisateur doit comporter au moins 3 caractères.';
     } else if (error.message === 'psswd_t_shrt') {
       msg = 'Le mot de passe doit comporter au moins 4 caractères.';
