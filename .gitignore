@@ -10,6 +10,7 @@ data/activity*.log
 data/sessions.json
 
 # Backups and temporary files
+data_backup/
 *.bak
 *.log
 .DS_Store

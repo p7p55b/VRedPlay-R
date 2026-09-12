@@ -260,6 +260,7 @@ function renderCategoryList() {
       delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (!confirm(`Supprimer définitivement le tag "${tag}" ?`)) return;
+        try {
           const mode = getCurrentMode();
           await apiRequest(`/tags/${encodeURIComponent(tag)}${mode === 'orange' ? '?mode=orange' : ''}`, { method: 'DELETE' });
           if (appState.activeTag.toLowerCase() === tag.toLowerCase()) {

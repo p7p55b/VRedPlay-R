@@ -500,6 +500,7 @@
         let availableTags = currentMode === 'orange'
             ? ['Adulte', 'Charme', 'XXX', 'Amateur', 'Hentai', 'Parodie', 'VR', 'Autre']
             : ['Action', 'Animation', 'Aventure', 'Comédie', 'Documentaire', 'Drame', 'Fantastique', 'Horreur', 'Policier', 'Sci-Fi', 'Séries', 'Thriller', 'Films', 'Autre'];
+        let isUploading = false;
         let selectedTags = new Set([currentMode === 'orange' ? 'Adulte' : 'Films']);
 
         // Protection contre la fermeture accidentelle de l'onglet pendant l'upload
