@@ -15,6 +15,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const VIDEOS_FILE = path.join(DATA_DIR, 'videos.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
+const TAGS_ORANGE_FILE = path.join(DATA_DIR, 'tags_orange.json');
 const ACTIVITY_LOG_FILE = path.join(DATA_DIR, 'activity.log');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -36,6 +37,17 @@ const DEFAULT_TAGS = [
   'Thriller',
   'Films',
   'Autre'
+];
+
+const DEFAULT_TAGS_ORANGE = [
+  'Adulte',
+  'Amateur',
+  'Autre',
+  'Charme',
+  'Hentai',
+  'Parodie',
+  'VR',
+  'XXX'
 ];
 
 function generateId() {
@@ -63,6 +75,7 @@ ensureFile(USERS_FILE, []);
 ensureFile(SESSIONS_FILE, {});
 ensureFile(VIDEOS_FILE, []);
 ensureFile(TAGS_FILE, DEFAULT_TAGS);
+ensureFile(TAGS_ORANGE_FILE, DEFAULT_TAGS_ORANGE);
 
 function readJson(filePath) {
   try {
@@ -113,13 +126,16 @@ function saveVideos(videos) {
   writeJson(VIDEOS_FILE, videos);
 }
 
-function getTags() {
-  const tags = readJson(TAGS_FILE);
-  return Array.isArray(tags) && tags.length ? tags : DEFAULT_TAGS;
+function getTags(mode = 'default') {
+  const file = mode === 'orange' ? TAGS_ORANGE_FILE : TAGS_FILE;
+  const def = mode === 'orange' ? DEFAULT_TAGS_ORANGE : DEFAULT_TAGS;
+  const tags = readJson(file);
+  return Array.isArray(tags) && tags.length ? tags : def;
 }
 
-function saveTags(tags) {
-  writeJson(TAGS_FILE, tags);
+function saveTags(tags, mode = 'default') {
+  const file = mode === 'orange' ? TAGS_ORANGE_FILE : TAGS_FILE;
+  writeJson(file, tags);
 }
 
 function randomToken() {
@@ -532,8 +548,9 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Tags API
-app.get('/api/tags', (_req, res) => {
-  res.json({ tags: getTags() });
+app.get('/api/tags', (req, res) => {
+  const mode = req.query.mode === 'orange' ? 'orange' : 'default';
+  res.json({ tags: getTags(mode) });
 });
 
 app.post('/api/tags', (req, res) => {
@@ -545,20 +562,21 @@ app.post('/api/tags', (req, res) => {
     }
 
     const body = req.body || {};
+    const mode = (req.query.mode === 'orange' || body.mode === 'orange') ? 'orange' : 'default';
     const tag = String(body.tag || body.name || '').trim();
     if (!tag) {
       return res.status(400).json({ error: 'tag_invalide' });
     }
 
-    const tags = getTags();
+    const tags = getTags(mode);
     if (!tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
       tags.push(tag);
       tags.sort((a, b) => a.localeCompare(b, 'fr'));
-      saveTags(tags);
-      logEvent('TAGS', `Nouveau tag créé : "${tag}"`, req);
+      saveTags(tags, mode);
+      logEvent('TAGS', `Nouveau tag créé [${mode}] : "${tag}"`, req);
     }
 
-    res.status(201).json({ ok: true, tags: getTags() });
+    res.status(201).json({ ok: true, tags: getTags(mode) });
   } catch (err) {
     logEvent('ERROR', `Erreur création tag : ${err.message}`, req);
     res.status(500).json({ error: 'srvr_error' });
@@ -573,13 +591,14 @@ app.delete('/api/tags/:name', (req, res) => {
       return res.status(403).json({ error: 'nd_dmn_prvlgs' });
     }
 
+    const mode = req.query.mode === 'orange' ? 'orange' : 'default';
     const targetName = decodeURIComponent(req.params.name).trim().toLowerCase();
-    let tags = getTags();
+    let tags = getTags(mode);
     tags = tags.filter((t) => t.toLowerCase() !== targetName);
-    saveTags(tags);
+    saveTags(tags, mode);
 
-    logEvent('TAGS', `Tag supprimé : "${targetName}"`, req);
-    res.json({ ok: true, tags: getTags() });
+    logEvent('TAGS', `Tag supprimé [${mode}] : "${targetName}"`, req);
+    res.json({ ok: true, tags: getTags(mode) });
   } catch (err) {
     logEvent('ERROR', `Erreur suppression tag : ${err.message}`, req);
     res.status(500).json({ error: 'srvr_error' });
@@ -587,15 +606,25 @@ app.delete('/api/tags/:name', (req, res) => {
 });
 
 // Video list (public pour tous : connectés et non-connectés)
-app.get('/api/videos', (_req, res) => {
+app.get('/api/videos', (req, res) => {
   try {
-    const siteVideos = discoverLocalLibraryVideos();
+    const mode = req.query.mode === 'orange' ? 'orange' : 'default';
+    const siteVideos = mode === 'orange' ? [] : discoverLocalLibraryVideos();
     const allUserVideos = getVideos();
 
-    const videos = [...siteVideos, ...allUserVideos].map((video) => {
+    const orangeTagsSet = new Set(getTags('orange').map((t) => t.toLowerCase()));
+
+    const filteredUserVideos = allUserVideos.filter((video) => {
+      const isOrange = video.mode === 'orange' || (
+        (video.tags || []).some((t) => orangeTagsSet.has(String(t).toLowerCase()))
+      );
+      return mode === 'orange' ? isOrange : !isOrange;
+    });
+
+    const videos = [...siteVideos, ...filteredUserVideos].map((video) => {
       let videoTags = video.tags;
       if (!videoTags || !Array.isArray(videoTags) || !videoTags.length) {
-        videoTags = video.category ? [video.category] : ['Films'];
+        videoTags = video.category ? [video.category] : [mode === 'orange' ? 'Adulte' : 'Films'];
       }
 
       return {
@@ -603,6 +632,7 @@ app.get('/api/videos', (_req, res) => {
         userId: video.userId,
         title: video.title,
         tags: normalizeTags(videoTags),
+        mode: video.mode || (mode === 'orange' ? 'orange' : 'default'),
         quality: video.quality || '1080p',
         language: video.language || 'VF',
         filename: video.filename || video.src?.replace(/^\//, ''),
@@ -615,7 +645,7 @@ app.get('/api/videos', (_req, res) => {
 
     res.json({ videos });
   } catch (err) {
-    logEvent('ERROR', `Erreur listing vidéos : ${err.message}`, _req);
+    logEvent('ERROR', `Erreur listing vidéos : ${err.message}`, req);
     res.status(500).json({ error: 'srvr_error' });
   }
 });
@@ -634,13 +664,14 @@ app.post('/api/videos', upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'video_absente' });
     }
 
+    const mode = (req.body.mode === 'orange' || req.query.mode === 'orange') ? 'orange' : 'default';
     const title = String(req.body.title || '').trim() || path.parse(req.file.originalname).name || 'Vidéo perso';
-    const tags = normalizeTags(req.body.tags || req.body.category || 'Films');
+    const tags = normalizeTags(req.body.tags || req.body.category || (mode === 'orange' ? 'Adulte' : 'Films'));
     const quality = String(req.body.quality || '1080p').trim() || '1080p';
     const language = String(req.body.language || 'VF').trim() || 'VF';
     const relativeFileName = req.file.filename;
 
-    const currentTags = getTags();
+    const currentTags = getTags(mode);
     let tagsUpdated = false;
     tags.forEach((t) => {
       if (!currentTags.some((ct) => ct.toLowerCase() === t.toLowerCase())) {
@@ -650,7 +681,7 @@ app.post('/api/videos', upload.single('file'), (req, res) => {
     });
     if (tagsUpdated) {
       currentTags.sort((a, b) => a.localeCompare(b, 'fr'));
-      saveTags(currentTags);
+      saveTags(currentTags, mode);
     }
 
     const videos = getVideos();
@@ -659,6 +690,7 @@ app.post('/api/videos', upload.single('file'), (req, res) => {
       userId: user.id,
       title,
       tags,
+      mode,
       quality,
       language,
       filename: relativeFileName,
@@ -668,7 +700,7 @@ app.post('/api/videos', upload.single('file'), (req, res) => {
     videos.push(video);
     saveVideos(videos);
 
-    logEvent('UPLOAD', `Nouveau film publié : "${video.title}" (${video.quality}, ${video.language}) -> ${video.filename}`, req);
+    logEvent('UPLOAD', `Nouveau film publié [${mode}] : "${video.title}" (${video.quality}, ${video.language}) -> ${video.filename}`, req);
 
     res.status(201).json({
       video: {
@@ -676,6 +708,7 @@ app.post('/api/videos', upload.single('file'), (req, res) => {
         userId: video.userId,
         title: video.title,
         tags: video.tags,
+        mode: video.mode,
         quality: video.quality,
         language: video.language,
         filename: video.filename,
@@ -776,8 +809,9 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
       fs.rmdirSync(uploadSessionDir);
     } catch (e) {}
 
-    const tags = normalizeTags(req.body.tags || req.body.category || 'Films');
-    const currentTags = getTags();
+    const mode = (req.body.mode === 'orange' || req.query.mode === 'orange') ? 'orange' : 'default';
+    const tags = normalizeTags(req.body.tags || req.body.category || (mode === 'orange' ? 'Adulte' : 'Films'));
+    const currentTags = getTags(mode);
     let tagsUpdated = false;
     tags.forEach((t) => {
       if (!currentTags.some((ct) => ct.toLowerCase() === t.toLowerCase())) {
@@ -787,7 +821,7 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
     });
     if (tagsUpdated) {
       currentTags.sort((a, b) => a.localeCompare(b, 'fr'));
-      saveTags(currentTags);
+      saveTags(currentTags, mode);
     }
 
     const videos = getVideos();
@@ -796,6 +830,7 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
       userId: user.id,
       title,
       tags,
+      mode,
       quality,
       language,
       filename: uniqueName,
@@ -805,7 +840,7 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
     videos.push(video);
     saveVideos(videos);
 
-    logEvent('UPLOAD', `Film complet réassemblé et publié : "${video.title}" (${video.quality}, ${video.language}) -> ${video.filename} (${totalChunks} morceaux)`, req);
+    logEvent('UPLOAD', `Film complet réassemblé et publié [${mode}] : "${video.title}" (${video.quality}, ${video.language}) -> ${video.filename} (${totalChunks} morceaux)`, req);
 
     return res.status(201).json({
       video: {
@@ -813,6 +848,7 @@ app.post('/api/videos/chunk', chunkUpload.single('chunk'), async (req, res) => {
         userId: video.userId,
         title: video.title,
         tags: video.tags,
+        mode: video.mode,
         quality: video.quality,
         language: video.language,
         filename: video.filename,
@@ -851,7 +887,21 @@ app.post('/api/videos/:id/tags', (req, res) => {
     video.tags = newTags;
     saveVideos(videos);
 
-    logEvent('TAGS', `Tags modifiés pour "${video.title}" : [${newTags.join(', ')}]`, req);
+    const mode = video.mode === 'orange' ? 'orange' : 'default';
+    const currentTags = getTags(mode);
+    let tagsUpdated = false;
+    newTags.forEach((t) => {
+      if (!currentTags.some((ct) => ct.toLowerCase() === t.toLowerCase())) {
+        currentTags.push(t);
+        tagsUpdated = true;
+      }
+    });
+    if (tagsUpdated) {
+      currentTags.sort((a, b) => a.localeCompare(b, 'fr'));
+      saveTags(currentTags, mode);
+    }
+
+    logEvent('TAGS', `Tags modifiés [${mode}] pour "${video.title}" : [${newTags.join(', ')}]`, req);
     res.json({ ok: true, video });
   } catch (err) {
     logEvent('ERROR', `Erreur modification tags : ${err.message}`, req);
