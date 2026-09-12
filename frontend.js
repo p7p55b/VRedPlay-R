@@ -725,20 +725,32 @@ async function handleRegister(event) {
   return false;
 }
 
+let isTogglingMode = false;
+let lastToggleTime = 0;
+
 async function toggleOrangeMode() {
-  const current = getCurrentMode();
-  const nextMode = current === 'orange' ? 'default' : 'orange';
-  localStorage.setItem('vplay_mode', nextMode);
-  applyThemeAndBrand();
-  showModeToast(nextMode === 'orange' ? 'Mode Orange activé (V2)' : 'Mode standard activé');
-  appState.activeTag = 'all';
-  appState.tags = nextMode === 'orange'
-    ? ['Adulte', 'Charme', 'XXX', 'Amateur', 'Hentai', 'Parodie', 'VR', 'Autre']
-    : ['Action', 'Animation', 'Aventure', 'Comédie', 'Documentaire', 'Drame', 'Fantastique', 'Horreur', 'Policier', 'Sci-Fi', 'Séries', 'Thriller', 'Films', 'Autre'];
-  appState.selectedUploadTags = new Set([nextMode === 'orange' ? 'Adulte' : 'Films']);
-  renderUploadTagsPicker();
-  await fetchTags();
-  await fetchVideos();
+  const now = Date.now();
+  if (isTogglingMode || now - lastToggleTime < 600) return;
+  isTogglingMode = true;
+  lastToggleTime = now;
+
+  try {
+    const current = getCurrentMode();
+    const nextMode = current === 'orange' ? 'default' : 'orange';
+    localStorage.setItem('vplay_mode', nextMode);
+    applyThemeAndBrand();
+    showModeToast(nextMode === 'orange' ? 'Mode Orange activé (V2)' : 'Mode standard activé');
+    appState.activeTag = 'all';
+    appState.tags = nextMode === 'orange'
+      ? ['Adulte', 'Charme', 'XXX', 'Amateur', 'Hentai', 'Parodie', 'VR', 'Autre']
+      : ['Action', 'Animation', 'Aventure', 'Comédie', 'Documentaire', 'Drame', 'Fantastique', 'Horreur', 'Policier', 'Sci-Fi', 'Séries', 'Thriller', 'Films', 'Autre'];
+    appState.selectedUploadTags = new Set([nextMode === 'orange' ? 'Adulte' : 'Films']);
+    renderUploadTagsPicker();
+    await fetchTags();
+    await fetchVideos();
+  } finally {
+    isTogglingMode = false;
+  }
 }
 
 // Global window exposure
@@ -769,9 +781,12 @@ let lastLoginClick = 0;
 let loginClickTimer = null;
 
 function handleLoginButtonClick(e) {
-  if (e) e.preventDefault();
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
   const now = Date.now();
-  if (now - lastLoginClick < 350) {
+  if (now - lastLoginClick < 400) {
     if (loginClickTimer) {
       clearTimeout(loginClickTimer);
       loginClickTimer = null;
@@ -784,6 +799,7 @@ function handleLoginButtonClick(e) {
     if (loginClickTimer) clearTimeout(loginClickTimer);
     loginClickTimer = setTimeout(() => {
       loginClickTimer = null;
+      lastLoginClick = 0;
       openAuthModal('login');
     }, 280);
   }
@@ -791,33 +807,19 @@ function handleLoginButtonClick(e) {
 
 if (openAuthBtn) {
   openAuthBtn.addEventListener('click', handleLoginButtonClick);
-  openAuthBtn.addEventListener('dblclick', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (loginClickTimer) {
-      clearTimeout(loginClickTimer);
-      loginClickTimer = null;
-    }
-    closeAuthModal();
-    toggleOrangeMode();
-  });
 }
 
 const authStatusContainer = document.querySelector('.auth-status-container');
 if (authStatusContainer) {
   let lastAuthClick = 0;
-  authStatusContainer.addEventListener('click', () => {
+  authStatusContainer.addEventListener('click', (e) => {
     const now = Date.now();
-    if (now - lastAuthClick < 350) {
+    if (now - lastAuthClick < 400) {
       lastAuthClick = 0;
       toggleOrangeMode();
     } else {
       lastAuthClick = now;
     }
-  });
-  authStatusContainer.addEventListener('dblclick', (e) => {
-    e.preventDefault();
-    toggleOrangeMode();
   });
 }
 
