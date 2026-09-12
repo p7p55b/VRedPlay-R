@@ -7,8 +7,8 @@ cp -u /usr/share/nginx/html/data/*.json /usr/share/nginx/html/data_backup/ 2>/de
 
 echo "=== [2/4] Recuperation du code (git pull) ==="
 cd /usr/share/nginx/html
-git checkout -f main
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
 
 echo "=== [3/4] Installation des dependances ==="
 npm install --omit=dev
