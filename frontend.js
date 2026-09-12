@@ -1,8 +1,50 @@
 const apiBase = '/api';
+
+function getCurrentMode() {
+  return localStorage.getItem('vplay_mode') === 'orange' ? 'orange' : 'default';
+}
+
+function applyThemeAndBrand() {
+  const isOrange = getCurrentMode() === 'orange';
+  const brandTitle = document.getElementById('brandTitle');
+  if (isOrange) {
+    document.body.classList.add('theme-orange');
+    if (brandTitle) brandTitle.innerHTML = 'VOrangePlay \'Air <span class="badge-mode">V2</span>';
+  } else {
+    document.body.classList.remove('theme-orange');
+    if (brandTitle) brandTitle.innerHTML = 'VRedPlay \'Air';
+  }
+}
+
+function showModeToast(message) {
+  let toast = document.getElementById('modeToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'modeToast';
+    toast.className = 'mode-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.style.display = 'block';
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => {
+    toast.style.display = 'none';
+  }, 2500);
+}
+
 const appState = {
   user: null,
   videos: [],
-  tags: [
+  tags: getCurrentMode() === 'orange' ? [
+    'Adulte',
+    'Charme',
+    'XXX',
+    'Amateur',
+    'Hentai',
+    'Parodie',
+    'VR',
+    'Autre'
+  ] : [
     'Action',
     'Animation',
     'Aventure',
@@ -20,7 +62,7 @@ const appState = {
   ],
   activeTag: 'all',
   searchQuery: '',
-  selectedUploadTags: new Set(['Films']),
+  selectedUploadTags: new Set([getCurrentMode() === 'orange' ? 'Adulte' : 'Films']),
   selectedEditTags: new Set(),
   editingVideo: null
 };
@@ -218,8 +260,8 @@ function renderCategoryList() {
       delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (!confirm(`Supprimer définitivement le tag "${tag}" ?`)) return;
-        try {
-          await apiRequest(`/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+          const mode = getCurrentMode();
+          await apiRequest(`/tags/${encodeURIComponent(tag)}${mode === 'orange' ? '?mode=orange' : ''}`, { method: 'DELETE' });
           if (appState.activeTag.toLowerCase() === tag.toLowerCase()) {
             appState.activeTag = 'all';
           }
@@ -495,8 +537,9 @@ function closePlayerModal() {
 
 // Data Fetching
 async function fetchTags() {
+  const mode = getCurrentMode();
   try {
-    const data = await apiRequest('/tags');
+    const data = await apiRequest(`/tags${mode === 'orange' ? '?mode=orange' : ''}`);
     if (data && Array.isArray(data.tags) && data.tags.length) {
       appState.tags = data.tags;
     }
@@ -510,12 +553,13 @@ async function fetchTags() {
 }
 
 async function fetchVideos() {
+  const mode = getCurrentMode();
   try {
-    const data = await apiRequest('/videos');
+    const data = await apiRequest(`/videos${mode === 'orange' ? '?mode=orange' : ''}`);
     appState.videos = (data.videos || []).map((video) => {
       let tags = video.tags;
       if (!tags || !Array.isArray(tags) || !tags.length) {
-        tags = video.category ? [video.category] : ['Films'];
+        tags = video.category ? [video.category] : [mode === 'orange' ? 'Adulte' : 'Films'];
       }
       return {
         id: video.id,
@@ -680,6 +724,22 @@ async function handleRegister(event) {
   return false;
 }
 
+async function toggleOrangeMode() {
+  const current = getCurrentMode();
+  const nextMode = current === 'orange' ? 'default' : 'orange';
+  localStorage.setItem('vplay_mode', nextMode);
+  applyThemeAndBrand();
+  showModeToast(nextMode === 'orange' ? 'Mode Orange activé (V2)' : 'Mode standard activé');
+  appState.activeTag = 'all';
+  appState.tags = nextMode === 'orange'
+    ? ['Adulte', 'Charme', 'XXX', 'Amateur', 'Hentai', 'Parodie', 'VR', 'Autre']
+    : ['Action', 'Animation', 'Aventure', 'Comédie', 'Documentaire', 'Drame', 'Fantastique', 'Horreur', 'Policier', 'Sci-Fi', 'Séries', 'Thriller', 'Films', 'Autre'];
+  appState.selectedUploadTags = new Set([nextMode === 'orange' ? 'Adulte' : 'Films']);
+  renderUploadTagsPicker();
+  await fetchTags();
+  await fetchVideos();
+}
+
 // Global window exposure
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
@@ -690,6 +750,7 @@ window.openEditTagsModal = openEditTagsModal;
 window.closeEditTagsModal = closeEditTagsModal;
 window.openPlayerModal = openPlayerModal;
 window.closePlayerModal = closePlayerModal;
+window.toggleOrangeMode = toggleOrangeMode;
 
 // Event Listeners
 const addMovieBtn = document.getElementById('addMovieBtn');
@@ -703,8 +764,60 @@ if (addMovieBtn) {
   });
 }
 
+let lastLoginClick = 0;
+let loginClickTimer = null;
+
+function handleLoginButtonClick(e) {
+  if (e) e.preventDefault();
+  const now = Date.now();
+  if (now - lastLoginClick < 350) {
+    if (loginClickTimer) {
+      clearTimeout(loginClickTimer);
+      loginClickTimer = null;
+    }
+    lastLoginClick = 0;
+    closeAuthModal();
+    toggleOrangeMode();
+  } else {
+    lastLoginClick = now;
+    if (loginClickTimer) clearTimeout(loginClickTimer);
+    loginClickTimer = setTimeout(() => {
+      loginClickTimer = null;
+      openAuthModal('login');
+    }, 280);
+  }
+}
+
 if (openAuthBtn) {
-  openAuthBtn.addEventListener('click', () => openAuthModal('login'));
+  openAuthBtn.addEventListener('click', handleLoginButtonClick);
+  openAuthBtn.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (loginClickTimer) {
+      clearTimeout(loginClickTimer);
+      loginClickTimer = null;
+    }
+    closeAuthModal();
+    toggleOrangeMode();
+  });
+}
+
+const authStatusContainer = document.querySelector('.auth-status-container');
+if (authStatusContainer) {
+  let lastAuthClick = 0;
+  authStatusContainer.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - lastAuthClick < 350) {
+      lastAuthClick = 0;
+      toggleOrangeMode();
+    } else {
+      lastAuthClick = now;
+    }
+  });
+  authStatusContainer.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    toggleOrangeMode();
+  });
 }
 
 if (closeAuthBtn) {
@@ -750,7 +863,8 @@ if (addTagForm) {
     if (!tag) return;
 
     try {
-      await apiRequest('/tags', {
+      const mode = getCurrentMode();
+      await apiRequest(`/tags${mode === 'orange' ? '?mode=orange' : ''}`, {
         method: 'POST',
         body: JSON.stringify({ tag })
       });
@@ -782,8 +896,9 @@ if (editTagsForm) {
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
+    const fallbackTag = getCurrentMode() === 'orange' ? 'Adulte' : 'Films';
     const combinedTags = [...new Set([...selectedTags, ...customTags])];
-    if (!combinedTags.length) combinedTags.push('Films');
+    if (!combinedTags.length) combinedTags.push(fallbackTag);
 
     try {
       await apiRequest(`/videos/${appState.editingVideo.id}/tags`, {
@@ -831,9 +946,10 @@ if (uploadForm) {
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
+    const fallbackTag = getCurrentMode() === 'orange' ? 'Adulte' : 'Films';
     const combinedTags = [...new Set([...selectedTags, ...customTags])];
-    if (!combinedTags.length) combinedTags.push('Films');
-    const primaryCategory = combinedTags[0] || 'Films';
+    if (!combinedTags.length) combinedTags.push(fallbackTag);
+    const primaryCategory = combinedTags[0] || fallbackTag;
 
     const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.m4v', '.mpeg', '.mpg', '.wmv', '.flv', '.ts', '.m2ts'];
     const fileExt = file && file.name ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : '';
@@ -865,6 +981,7 @@ if (uploadForm) {
         chunkData.append('title', title);
         chunkData.append('category', primaryCategory);
         chunkData.append('tags', JSON.stringify(combinedTags));
+        chunkData.append('mode', getCurrentMode());
         chunkData.append('quality', quality);
         chunkData.append('language', language);
         chunkData.append('chunk', chunkBlob, file.name);
@@ -886,7 +1003,7 @@ if (uploadForm) {
       isUploading = false;
       showMessage('uploadMessage', `Vidéo publié avec succès : ${title}`, 'success');
       uploadForm.reset();
-      appState.selectedUploadTags = new Set(['Films']);
+      appState.selectedUploadTags = new Set([getCurrentMode() === 'orange' ? 'Adulte' : 'Films']);
       renderUploadTagsPicker();
       appState.activeTag = 'all';
       await fetchTags();
@@ -936,6 +1053,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Initialization
+applyThemeAndBrand();
 setAuthMode('login');
 setAuthState();
 loadCurrentUser();
